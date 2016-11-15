@@ -1,0 +1,26 @@
+body{
+  background: #9983af;
+}
+.connect-button{
+  width: 200px;
+  height: 200px;
+  position: fixed;
+  top: 50%;
+  margin-top: -100px;
+  left: 50%;
+  margin-left: -100px;
+  border-radius: 30px;
+  background: #59d1c0;
+  padding: 30px;
+  box-sizing: border-box;
+  box-shadow: 0px 3px 0px rgba(0,0,0,.2);
+  cursor: pointer;
+}
+.connect-button:hover{
+  box-shadow: 0px 4px 2px rgba(0,0,0,.2);
+  margin-top: -101px;
+}
+.connect-button:active{
+  box-shadow: 0px 0px 0px rgba(0,0,0,.2);
+  margin-top: -98px;
+}
