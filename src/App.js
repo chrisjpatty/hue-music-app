@@ -14,20 +14,48 @@ var hue = jsHue();
 var user;
 
 var App = React.createClass({
+	getInitialState: function(){
+		return{
+			lights: null,
+			duration: 0,
+			script: null
+		}
+	},
 	componentDidMount: function(){
 		this.discover();
+	},
+	loadVideo: function(){
 		player = YouTubePlayer("video-player");
 		player.loadVideoById('fXSovfzyx28');
-		player
-    .stopVideo()
-    .then(() => {
-        console.log("I stopped the video");
-    });
+		player.on('stateChange', (event) => {
+	    if(event.data == 1){
+	    	player.getDuration().then((data) => {
+	    		var lights = this.state.lights;
+	    		var lightArray = [];
+	    		var duration = Math.round(data);
+	    		
+	    		lights.filter(function(light){
+	    			var script = [];
+		    		for(var i = 0; i < duration; i++){
+		    			script.push({t:i+1, on: false, bri: 254, hue: 65535, sat: 0, transition: 0});
+		    		}
+	    			lightArray.push({light: light, lightScript: script});
+	    		})
+
+	    		console.log("lightArray",lightArray);
+	    		this.setState({
+	    			duration: duration,
+	    			script: lightArray
+	    		})
+	    	});
+	    	this.stopVideo();
+	    }
+		});
 	},
 	playVideo: function(){
-		player.playVideo();
-		
-		timer = setInterval(this.playScript, 1000);
+		player.playVideo().then(() => {
+			timer = setInterval(this.playScript, 1000);
+		});
 	},
 	stopVideo: function(){
 		player.stopVideo();
@@ -44,6 +72,7 @@ var App = React.createClass({
     });
 	},
 	discover: function(){
+		var capture = this;
 		hue.discover(
 	    function(bridges) {
 	        if(bridges.length === 0) {
@@ -69,9 +98,7 @@ var App = React.createClass({
 	                //     });
 	                // });
 	                user = bridge.user("R5w7s0A3fVWBnVAve9NAOQA6wtT51wBqgLZAd4x-");
-	                user.getLights(function(data){
-	                    	console.log(data[9]);
-	                    });
+	                capture.getLights();
 	            });
 	        }
 	    },
@@ -79,6 +106,25 @@ var App = React.createClass({
 	        console.error(error.message);
 	    }
 		);
+	},
+	getLights: function(){
+		var capture = this;
+    user.getLights(function(data){
+    	var numLights = Object.keys(data).length;
+    	var lights = [];
+    	for(var i = 0; i < numLights; i++){
+    		if(typeof data[(i+1)] !== 'undefined'){
+    			data[(i+1)].lightId = i+1;
+    			lights.push(data[(i+1)]);
+    		}
+    	}
+			console.log(lights);
+    	capture.setState({
+    		lights: lights
+    	}, function(){
+    		this.loadVideo();
+    	})
+    });
 	},
 	toggleLight: function(){
 		user.getLight(9,function(data){
@@ -94,10 +140,42 @@ var App = React.createClass({
 		user.setLightState(9, { hue: 65535, sat: 254 }, function(data) { /* ... */ });
 	},
   render() {
+  	var lights = this.state.lights;
     return (
       <div className="App">
 	      <div className="app-top">
 	      	<div id="video-player"></div>
+	      </div>
+	      <div className="app-bottom">
+		      <div className="timeline-wrapper">
+		      	<table className="timeline">
+		      		<thead>
+		      			<tr>
+			      			<th>
+			      				Light Name
+			      			</th>
+			      			{
+					      		this.state.script == null ?
+					      		null
+					      		:
+					      		this.state.script[0].lightScript.map(function(light, i){
+					      			return <TimeHead time={i%5 == 0 ? i : null} key={i}/>
+					      		})
+					      	}
+				      	</tr>
+		      		</thead>
+		      		<tbody>
+				      	{
+				      		this.state.script == null ?
+				      		null
+				      		:
+				      		this.state.script.map(function(light, i){
+				      			return <LightRow light={light} key={i}/>
+				      		})
+				      	}
+			      	</tbody>
+		      	</table>
+		      </div>
 	      </div>
 	      <div className="connect-button">
 	      	<img src="img/bridge_icon_white.svg" onClick={this.discover} alt="Discover Bridges"/>
@@ -109,6 +187,82 @@ var App = React.createClass({
       </div>
     );
   }
+})
+
+var LightRow = React.createClass({
+	render: function(){
+		return(
+			<tr className="light-row">
+				<td className="light-column name-column">
+					{this.props.light.light.name}
+				</td>
+
+					{
+						this.props.light.lightScript.map(function(second, i){
+							return <Second key={i}/>
+						})
+					}
+
+			</tr>
+		)
+	}
+})
+
+var TimeHead = React.createClass({
+	render: function(){
+		return(
+			<th className="lh">{this.props.time}</th>
+		)
+	}
+})
+
+var Second = React.createClass({
+	getInitialState: function(){
+		return {
+			showModal: false
+		}
+	},
+	toggleModal: function(){
+		if(this.state.showModal){
+			this.setState({
+				showModal: false
+			})
+		}else{
+			this.setState({
+				showModal: true
+			})
+		}
+	},
+	render: function(){
+		return(
+			<td className="lc">
+				<div className="ls" onClick={this.toggleModal}></div>
+				{
+					this.state.showModal ?
+					<div className="second-modal">
+						<div className="modal-row">
+							<label>Hue</label>
+							<input className="modal-input" />
+						</div>
+						<div className="modal-row">
+							<label>Brightness</label>
+							<input className="modal-input" />
+						</div>
+						<div className="modal-row">
+							<label>Saturation</label>
+							<input className="modal-input" />
+						</div>
+						<div className="modal-row">
+							<label>Transition</label>
+							<input className="modal-input" />
+						</div>
+					</div>
+					:
+					null
+				}
+			</td>
+		)
+	}
 })
 
 export default App;
