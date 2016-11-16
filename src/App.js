@@ -1,11 +1,48 @@
 import React from 'react';
 import jsHue from './jshue.js';
 import './App.css';
+import YouTubePlayer from 'youtube-player';
+import script from './script.js';
+let player;
+var timer;
+//import gapi from './api.js';
+//console.log(google);
+//import 'googleapis';
+//import './api.js';
 
 var hue = jsHue();
 var user;
 
 var App = React.createClass({
+	componentDidMount: function(){
+		this.discover();
+		player = YouTubePlayer("video-player");
+		player.loadVideoById('fXSovfzyx28');
+		player
+    .stopVideo()
+    .then(() => {
+        console.log("I stopped the video");
+    });
+	},
+	playVideo: function(){
+		player.playVideo();
+		
+		timer = setInterval(this.playScript, 1000);
+	},
+	stopVideo: function(){
+		player.stopVideo();
+		clearInterval(timer);
+	},
+	playScript: function(){
+		player.getCurrentTime().then((data) => {
+        var time = Math.round(data);
+        script.filter(function(step){
+        	if(step.t == time){
+        		user.setLightState(9, {on: step.on, hue: step.hue, sat: step.sat, transitiontime: step.transition}, function(data) { /* ... */ });
+        	}
+        })
+    });
+	},
 	discover: function(){
 		hue.discover(
 	    function(bridges) {
@@ -59,11 +96,16 @@ var App = React.createClass({
   render() {
     return (
       <div className="App">
-        <div className="connect-button">
-        	<img src="img/bridge_icon_white.svg" onClick={this.discover} alt="Discover Bridges"/>
-        </div>
-        <button className="light-button" onClick={this.toggleLight}>Toggle Light</button>
-        <button className="light-button" onClick={this.turnRed}>Turn Light Red</button>
+	      <div className="app-top">
+	      	<div id="video-player"></div>
+	      </div>
+	      <div className="connect-button">
+	      	<img src="img/bridge_icon_white.svg" onClick={this.discover} alt="Discover Bridges"/>
+	      </div>
+	      <button className="light-button" onClick={this.toggleLight}>Toggle Light</button>
+	      <button className="light-button" onClick={this.turnRed}>Turn Light Red</button>
+	      <button className="light-button" onClick={this.playVideo}>Play Video</button>
+	      <button className="light-button" onClick={this.stopVideo}>Stop Video</button>
       </div>
     );
   }

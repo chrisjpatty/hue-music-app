@@ -2,16 +2,14 @@ body{
   background: #9983af;
 }
 .connect-button{
-  width: 200px;
-  height: 200px;
+  width: 80px;
+  height: 80px;
   position: fixed;
-  top: 50%;
-  margin-top: -100px;
-  left: 50%;
-  margin-left: -100px;
-  border-radius: 30px;
+  bottom: 15px;
+  right: 15px;
+  border-radius: 10px;
   background: #59d1c0;
-  padding: 30px;
+  padding: 10px;
   box-sizing: border-box;
   box-shadow: 0px 3px 0px rgba(0,0,0,.2);
   cursor: pointer;
@@ -23,4 +21,21 @@ body{
 .connect-button:active{
   box-shadow: 0px 0px 0px rgba(0,0,0,.2);
   margin-top: -98px;
+}
+.app-top{
+  height: 40vh;
+  width: 100%;
+  background: #806699;
+}
+.app-bottom{
+  height: 60vh;
+  width: 100%;
+}
+#video-player{
+  width: 500px;
+  height: 40vh;
+  clear: both;
+  position: absolute;
+  left: 50%;
+  margin-left: -250px;
 }
