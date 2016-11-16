@@ -52,6 +52,10 @@ table, tr, td{
   float: left;
   overflow-x: scroll;
 }
+.timeline-wrapper{
+  height: 460px;
+  margin-bottom: -20px;
+}
 .light-row{
   width: auto;
   height: 30px;
@@ -90,6 +94,7 @@ table, tr, td{
   background-color: #fff;
   padding: 0px;
   position: relative;
+  cursor: pointer;
 }
 .lh{
   font-size: 10px;
@@ -113,6 +118,7 @@ table, tr, td{
   padding: 5px;
   padding-top: 7px;
   padding-bottom: 15px;
+  box-shadow: 0px 8px 11px -5px rgba(0,0,0,0.5);
 }
 .second-modal::after{
   content: "";
