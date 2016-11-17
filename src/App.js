@@ -5,6 +5,7 @@ import YouTubePlayer from 'youtube-player';
 import script from './script.js';
 let player;
 var timer;
+var hasDuration = false;
 //import gapi from './api.js';
 //console.log(google);
 //import 'googleapis';
@@ -27,9 +28,10 @@ var App = React.createClass({
 	loadVideo: function(){
 		player = YouTubePlayer("video-player");
 		player.loadVideoById('fXSovfzyx28');
-		player.on('stateChange', (event) => {
+		var listener = player.on('stateChange', (event) => {
 	    if(event.data == 1){
 	    	player.getDuration().then((data) => {
+
 	    		var lights = this.state.lights;
 	    		var lightArray = [];
 	    		var duration = Math.round(data);
@@ -37,7 +39,7 @@ var App = React.createClass({
 	    		lights.filter(function(light){
 	    			var script = [];
 		    		for(var i = 0; i < duration; i++){
-		    			script.push({t:i+1, on: false, bri: 254, hue: 65535, sat: 0, transition: 0});
+		    			script.push({t:i+1, on: false, bri: 254, hue: 65535, sat: 0, transition: 0, active: false, showModal: false});
 		    		}
 	    			lightArray.push({light: light, lightScript: script});
 	    		})
@@ -47,8 +49,10 @@ var App = React.createClass({
 	    			duration: duration,
 	    			script: lightArray
 	    		})
+
+	    		player.stopVideo();
+	    		player.off(listener);
 	    	});
-	    	this.stopVideo();
 	    }
 		});
 	},
@@ -139,8 +143,21 @@ var App = React.createClass({
 	turnRed: function(){
 		user.setLightState(9, { hue: 65535, sat: 254 }, function(data) { /* ... */ });
 	},
+	setSecond: function(setObj){
+		console.log("setObj",setObj)
+		switch(setObj.type){
+			case "toggleModal": 
+				var lightArray = this.state.script;
+				lightArray[setObj.lightId - 1].lightScript[setObj.t - 1].showModal = setObj.value;
+				this.setState({
+					script: lightArray
+				})
+				break;
+		}
+	},
   render() {
   	var lights = this.state.lights;
+  	var capture = this;
     return (
       <div className="App">
 	      <div className="app-top">
@@ -170,27 +187,34 @@ var App = React.createClass({
 				      		null
 				      		:
 				      		this.state.script.map(function(light, i){
-				      			return <LightRow light={light} key={i}/>
+				      			return <LightRow setSecond={capture.setSecond} light={light} key={i}/>
 				      		})
 				      	}
 			      	</tbody>
 		      	</table>
 		      </div>
 	      </div>
-	      <div className="connect-button">
-	      	<img src="img/bridge_icon_white.svg" onClick={this.discover} alt="Discover Bridges"/>
+	      <div className="controls">
+		      <div className="connect-button">
+		      	<img src="img/bridge_icon_white.svg" onClick={this.discover} alt="Discover Bridges"/>
+		      </div>
+		      <button className="light-button" onClick={this.toggleLight}>Toggle Light</button>
+		      <button className="light-button" onClick={this.turnRed}>Turn Light Red</button>
+		      <button className="light-button" onClick={this.playVideo}>Play Video</button>
+		      <button className="light-button" onClick={this.stopVideo}>Stop Video</button>
 	      </div>
-	      <button className="light-button" onClick={this.toggleLight}>Toggle Light</button>
-	      <button className="light-button" onClick={this.turnRed}>Turn Light Red</button>
-	      <button className="light-button" onClick={this.playVideo}>Play Video</button>
-	      <button className="light-button" onClick={this.stopVideo}>Stop Video</button>
       </div>
     );
   }
 })
 
 var LightRow = React.createClass({
+	setSecond: function(setObj){
+		setObj.lightId = this.props.light.light.lightId;
+		this.props.setSecond(setObj);
+	},
 	render: function(){
+		var capture = this;
 		return(
 			<tr className="light-row">
 				<td className="light-column name-column">
@@ -199,7 +223,7 @@ var LightRow = React.createClass({
 
 					{
 						this.props.light.lightScript.map(function(second, i){
-							return <Second key={i}/>
+							return <Second second={second} setSecond={capture.setSecond} key={i}/>
 						})
 					}
 
@@ -217,28 +241,20 @@ var TimeHead = React.createClass({
 })
 
 var Second = React.createClass({
-	getInitialState: function(){
-		return {
-			showModal: false
-		}
-	},
 	toggleModal: function(){
-		if(this.state.showModal){
-			this.setState({
-				showModal: false
-			})
+		if(this.props.second.showModal){
+			this.props.setSecond({type: "toggleModal" ,t: this.props.second.t, value: false});
 		}else{
-			this.setState({
-				showModal: true
-			})
+			this.props.setSecond({type: "toggleModal" ,t: this.props.second.t, value: true});
 		}
 	},
 	render: function(){
+		console.log(this.props.second.showModal);
 		return(
 			<td className="lc">
 				<div className="ls" onClick={this.toggleModal}></div>
 				{
-					this.state.showModal ?
+					this.props.second.showModal ?
 					<div className="second-modal">
 						<div className="modal-row">
 							<label>Hue</label>
